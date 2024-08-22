@@ -10,7 +10,11 @@
 </head>
 <body>
     <div class="container">
-        <div id="chainSelect" class="btn-group mt-4 top-0 start-50 translate-middle-x">
+        <div class="clearfix float-end mt-3">
+            <a href="" id="logoutBtn" class="d-none">Logout</a>
+        </div>
+
+        <div id="chainSelect" class="btn-group mt-5 top-0 start-50 translate-middle-x">
             <div class="btn-group" role="group" data-table="filter" data-ip6="false">
                 <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">Filter v4</button>
                 <ul class="dropdown-menu"></ul>
@@ -85,7 +89,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-danger" data-bs-dismiss="modal" onclick="deleteCurrentChain()">Delete</button>
+                <button type="button" class="btn btn-danger deleteBtn" data-bs-dismiss="modal">Delete</button>
             </div>
             </div>
         </div>
@@ -128,6 +132,8 @@
             </div>
         </div>
     </div>
+
+    <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
     <script src="js/jquery.min.js"></script>
     <script src="js/jquery.tablednd.js"></script>

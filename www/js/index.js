@@ -1,19 +1,21 @@
+const logoutBtn = document.getElementById('logoutBtn');
 const rulesTable = document.querySelector('#rulesTable tbody');
 const addRuleForm = document.getElementById('addRuleForm');
 const currentChainElement = document.getElementById('currentChain');
 const deleteChainModal = document.getElementById('deleteChainModal');
 const createChainModal = document.getElementById('createChainModal');
 const deleteRuleModal = document.getElementById('deleteRuleModal');
+const toastContainer = document.getElementById('toastContainer');
 const DEFAULT_CHAIN = 'false-filter-FORWARD';
 
 let currentChain;
 let chains = {};
 
 // Chains
-function switchChain(id) {
+async function switchChain(id) {
     currentChain = chains[id];
     updateChainInfo();
-    loadRules();
+    await loadRules();
 }
 
 function updateChainInfo() {
@@ -30,6 +32,7 @@ async function loadChains() {
         let html = '';
     
         let res = await fetch(`/api/chain?table=${table}&ip6=${ip6}`);
+        if(res.status == 500) throw new Error(await res.text());
         if(!res.ok) throw new Error('Request failed with status: '+res.status);
         res = await res.json();
         
@@ -41,12 +44,12 @@ async function loadChains() {
             html += `<li><div class="dropdown-item curs-pointer ${chain.system ? 'fw-bold' : ''}" onclick="switchChain('${chainId}')">${chain.name}</div></li>`;
         });
     
-        html += `<li><div class="dropdown-item curs-pointer" onclick="createChainPopup('${table}', '${ip6}')">[New Chain]</div></li>`;
+        html += `<li><div class="dropdown-item curs-pointer" onclick="showCreateChainModal('${table}', '${ip6}')">[New Chain]</div></li>`;
     
         element.querySelector('.dropdown-menu').innerHTML = html;
     }
 
-    if(!currentChain) switchChain(DEFAULT_CHAIN);
+    if(!currentChain) await switchChain(DEFAULT_CHAIN);
 }
 loadChains();
 
@@ -61,61 +64,105 @@ document.querySelector('#currentChainActions .transparentEditBtn').addEventListe
         const textField = document.createElement('input');
         textField.classList.add('form-control', 'input-sm');
         textField.value = currentChain.name;
-        textField.onkeydown = event => {
+        textField.onkeydown = async event => {
             if(event.key == 'Enter') {
                 currentChainElement.dataset.edit = 'false';
-                currentChainElement.innerText = currentChain.name;
-                renameCurrentChain(textField.value);
+                const oldName = currentChain.name;
+                if(oldName == textField.value) {
+                    currentChainElement.innerText = oldName;
+                    return;
+                }
+                try {
+                    await renameCurrentChain(textField.value);
+                    showToast({
+                        message: `Chain <b>${oldName}</b> renamed to <b>${textField.value}</b>`,
+                        type: 'info'
+                    });
+                } catch(err) {
+                    currentChainElement.innerText = oldName;
+                    showError(err.message);
+                }
             }
         };
         currentChainElement.appendChild(textField);
+        setTimeout(() => textField.focus(), 50);
     }
-
 });
-
-document.querySelector('#currentChainActions .transparentDeleteBtn').addEventListener('click', () => {
-    deleteChainModal.querySelector('.chainName').innerText = currentChain.name;
-    new bootstrap.Modal(deleteChainModal).show();
-});
-
-async function deleteCurrentChain() {
-    let res = await fetch(`/api/chain?table=${currentChain.table}&ip6=${currentChain.ip6}&name=${currentChain.name}`, { method: 'DELETE' });
-    if(!res.ok) throw new Error('Request failed with status: '+res.status);
-
-    await loadChains();
-    switchChain(DEFAULT_CHAIN);
-}
-
 async function renameCurrentChain(newName) {
     if(!newName || newName == currentChain.name) return;
 
     let res = await fetch(`/api/chain?table=${currentChain.table}&ip6=${currentChain.ip6}&action=rename&name=${currentChain.name}&newName=${newName}`, { method: 'POST'});
+    if(res.status == 500) throw new Error(await res.text());
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
 
     await loadChains();
-    switchChain(currentChain.ip6+'-'+currentChain.table+'-'+newName);
+    await switchChain(currentChain.ip6+'-'+currentChain.table+'-'+newName);
 }
 
-function createChainPopup(table, ip6) {
-    createChainModal.querySelector('.createBtn').onclick = () => {
-        const nameField = document.getElementById('createChainName');
+document.querySelector('#currentChainActions .transparentDeleteBtn').addEventListener('click', event => {
+    const clickHandler = async () => {
+        try {
+            await deleteCurrentChain();
+            showToast({
+                message: `Chain <b>${currentChain.name}</b> successfully deleted`,
+                type: 'danger'
+            });
+        } catch(err) {
+            showError(err.message);
+        }
+    };
+    if(event.shiftKey) {
+        clickHandler();
+    } else {
+        deleteChainModal.querySelector('.chainName').innerText = currentChain.name;
+        deleteChainModal.querySelector('.deleteBtn').onclick = clickHandler;
+        new bootstrap.Modal(deleteChainModal).show();
+    }
+});
+async function deleteCurrentChain() {
+    let res = await fetch(`/api/chain?table=${currentChain.table}&ip6=${currentChain.ip6}&name=${currentChain.name}`, { method: 'DELETE' });
+    if(res.status == 500) throw new Error(await res.text());
+    if(!res.ok) throw new Error('Request failed with status: '+res.status);
+
+    await loadChains();
+    await switchChain(DEFAULT_CHAIN);
+}
+
+function showCreateChainModal(table, ip6) {
+    const nameField = document.getElementById('createChainName');
+    const createBtn = createChainModal.querySelector('.createBtn')
+    nameField.value = '';
+    setTimeout(() => nameField.focus(), 50);
+    nameField.onkeydown = event => {
+        if(event.key == 'Enter') createBtn.click();
+    };
+    createBtn.onclick = async () => {
         if(!nameField.value) return;
-        createNewChain(table, ip6, nameField.value);
-        nameField.value = '';
+        try {
+            await createNewChain(table, ip6, nameField.value);
+            showToast({
+                message: `Chain <b>${nameField.value}</b> successfully created`,
+                type: 'success'
+            });
+        } catch(err) {
+            showError(err.message);
+        }
     };
     new bootstrap.Modal(createChainModal).show();
 }
 async function createNewChain(table, ip6, name) {
     let res = await fetch(`/api/chain?table=${table}&ip6=${ip6}&name=${name}`, { method: 'PUT' });
+    if(res.status == 500) throw new Error(await res.text());
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
 
     await loadChains();
-    switchChain(ip6+'-'+table+'-'+name);
+    await switchChain(ip6+'-'+table+'-'+name);
 }
 
 // Rules
 async function loadRules() {
     let res = await fetch(`/api/rules?chain=${currentChain.name}&table=${currentChain.table}&ip6=${currentChain.ip6}`);
+    if(res.status == 500) throw new Error(await res.text());
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
     res = await res.json();
 
@@ -141,7 +188,7 @@ async function loadRules() {
                     <td class="rule">${rule}</td>
                     <td>
                         <button class="btn-transparent transparentEditBtn" title="Edit" onclick="showEditRuleField(this, ${i})">&nbsp;</button>
-                        <button class="btn-transparent transparentDeleteBtn" title="Delete" onclick="showDeleteRuleModal(this, ${i})">&nbsp;</button>
+                        <button class="btn-transparent transparentDeleteBtn" title="Delete" onclick="showDeleteRuleModal(this, event.shiftKey, ${i});">&nbsp;</button>
                     </td>
                 </tr>`;
            rulesTable.appendChild(tableRow.content.firstChild);
@@ -154,14 +201,18 @@ async function loadRules() {
 
 $(document).ready(() => {
     $('#rulesTable').tableDnD({
-        onDrop: (table, draggedRow) => {
+        onDrop: async (table, draggedRow) => {
             let newIndex, oldIndex = draggedRow.id.replace('rule-', '');
             let i = 1;
             for(const row of rulesTable.children) {
                 if(row == draggedRow) newIndex = i;
                 i++;
             }
-            moveRow(oldIndex, newIndex)
+            try {
+                await moveRow(oldIndex, newIndex)
+            } catch(err) {
+                showError(err.message);
+            }
         },
         dragHandle: '.handle',
         onDragClass: 'isDragged'
@@ -170,18 +221,35 @@ $(document).ready(() => {
 async function moveRow(oldIndex, newIndex) {
     if(oldIndex == newIndex) return;
     let res = await fetch(`/api/rules?table=${currentChain.table}&ip6=${currentChain.ip6}&chain=${currentChain.name}&action=move&index=${oldIndex}&newIndex=${newIndex}`, { method: 'POST' });
+    if(res.status == 500) throw new Error(await res.text());
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
     await loadRules();
 }
 
-function showDeleteRuleModal(button, index) {
-    const row = button.parentElement.parentElement;
-    deleteRuleModal.querySelector('.rule').innerText = row.dataset.rule;
-    deleteRuleModal.querySelector('.deleteBtn').onclick = () => deleteRule(index);
-    new bootstrap.Modal(deleteRuleModal).show();
+function showDeleteRuleModal(button, skipWarning, index) {
+    const clickHandler = async () => {
+        try {
+            await deleteRule(index);
+            showToast({
+                message: `Rule <b>${index}</b> successfully deleted`,
+                type: 'danger'
+            });
+        } catch(err) {
+            showError(err.message);
+        }
+    };
+    if(skipWarning) {
+        clickHandler();
+    } else {
+        const row = button.parentElement.parentElement;
+        deleteRuleModal.querySelector('.rule').innerText = row.dataset.rule;
+        deleteRuleModal.querySelector('.deleteBtn').onclick = clickHandler;
+        new bootstrap.Modal(deleteRuleModal).show();
+    }
 }
 async function deleteRule(index) {
     let res = await fetch(`/api/rules?table=${currentChain.table}&ip6=${currentChain.ip6}&chain=${currentChain.name}&index=${index}`, { method: 'DELETE' });
+    if(res.status == 500) throw new Error(await res.text());
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
     await loadRules();
 }
@@ -197,25 +265,33 @@ function showEditRuleField(button, index) {
         const textField = document.createElement('input');
         textField.classList.add('form-control', 'input-sm');
         textField.value = ruleColumn.innerText;
-        textField.onkeydown = event => {
+        textField.onkeydown = async event => {
             if(event.key == 'Enter') {
                 row.dataset.edit = 'false';
-                ruleColumn.innerHTML = row.dataset.rule;
-                editRule(index, textField.value);
+                if(!textField.value) {
+                    ruleColumn.innerHTML = row.dataset.rule;
+                    return;
+                }
+                try {
+                    await editRule(index, textField.value);
+                } catch(err) {
+                    ruleColumn.innerHTML = row.dataset.rule;
+                    showError(err.message);
+                }
             }
         };
         ruleColumn.innerText = '';
         ruleColumn.appendChild(textField);
+        setTimeout(() => textField.focus(), 50);
     }
 }
 async function editRule(index, newValue) {
-    if(!newValue) return;
-
     let res = await fetch(`/api/rules?table=${currentChain.table}&ip6=${currentChain.ip6}&chain=${currentChain.name}&action=edit&index=${index}`, {
         method: 'POST',
         headers: new Headers({'Content-Type': 'application/json'}),
         body: JSON.stringify({rule: newValue})
     });
+    if(res.status == 500) throw new Error(await res.text());
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
     await loadRules();
 }
@@ -227,10 +303,18 @@ addRuleForm.querySelector('.transparentCreateBtn').addEventListener('click', asy
     const indexField = addRuleForm.querySelector('.index');
     const ruleField = addRuleForm.querySelector('.value');
     if(!ruleField.value) return;
-    let index = parseInt(indexField.value);
-    if(!index || index < 1 || index > parseInt(indexField.placeholder)) index = '';
+    let index = parseInt(indexField.value), lastIndex = parseInt(indexField.placeholder);
+    if(!index || index < 1 || index > lastIndex) index = lastIndex;
 
-    await insertRule(index, ruleField.value);
+    try {
+        await insertRule(index, ruleField.value);
+        showToast({
+            message: `Rule <b>${index}</b> successfully created`,
+            type: 'success'
+        });
+    } catch(err) {
+        showError(err.message);
+    }
     indexField.value = '';
     ruleField.value = '';
 });
@@ -242,6 +326,41 @@ async function insertRule(index, value) {
         headers: new Headers({'Content-Type': 'application/json'}),
         body: JSON.stringify({rule: value})
     });
+    if(res.status == 500) throw new Error(await res.text());
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
     await loadRules();
 }
+
+// Common
+function showError(message) {
+    showToast({
+        message: '<b>An internal error occoured:</b><br>'+message.replace('\n', '<br>'),
+        type: 'danger',
+        width: '500px'
+    });
+}
+function showToast(data) {
+    let toastElement = document.createElement('template');
+    toastElement.innerHTML =
+        `<div class="toast align-items-center border-0 mb-2 text-bg-${data.type || 'secondary'}">
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${data.message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>`;
+    toastElement = toastElement.content.firstChild;
+    if(data.width) toastElement.style.width = data.width;
+    toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
+    toastContainer.appendChild(toastElement);
+    new bootstrap.Toast(toastElement).show();
+}
+
+if(document.cookie.includes('token=')) logoutBtn.classList.remove('d-none');
+logoutBtn.addEventListener('click', async function(event) {
+    event.preventDefault();
+    let res = await fetch('/api/logout', { method: 'POST' });
+    if(!res.ok) throw new Error('Request failed with status: '+res.status);
+    window.location.replace('/login.html');
+});
