@@ -1,0 +1,53 @@
+#rulesTable .handle {
+    width: 35px;
+    background: no-repeat center/40% url(../img/grip-handle.svg);
+    cursor: move;
+}
+#rulesTable .isDragged > td {
+    background-color: rgba(152, 152, 152, 0.5);
+    transition: 0.3s;
+}
+#rulesTable td {
+    vertical-align: middle;
+}
+#rulesTable input {
+    width: 100%;
+}
+#rulesTable tr td:nth-child(2), #rulesTable tr th:nth-child(2) {
+    font-weight: bold;
+    text-align: center;
+    width: 46px;
+}
+#rulesTable .index {
+    text-align: center;
+}
+#currentChain input {
+    width: 250px;
+    display: inline;
+}
+
+.input-sm {
+    padding: 1px 4px;
+}
+.transparentDeleteBtn {
+    background: no-repeat center url(../img/trash.svg);
+    width: 14px;
+    margin: 0 2px;
+}
+.transparentEditBtn {
+    background: no-repeat center url(../img/edit.svg);
+    width: 16px;
+    margin: 0 2px;
+}
+.transparentCreateBtn {
+    background: no-repeat center url(../img/create.svg);
+    width: 20px;
+    margin: 0 2px;
+}
+.btn-transparent {
+    border: 0;
+    outline: 0;
+}
+.curs-pointer {
+    cursor: pointer;
+}

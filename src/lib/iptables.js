@@ -1,6 +1,10 @@
 const childProcess = require('child_process');
 
 class Iptables {
+    constructor(debug) {
+        this.debug = debug;
+    }
+
     // Chains
     async listChains(table = 'filter', ip6 = false) {
         const output = await this.execute(['-t', table, '-S'], ip6);
@@ -82,7 +86,9 @@ class Iptables {
 
     execute(args, ip6) {
         return new Promise((resolve, reject) => {
-            const arpscan = childProcess.spawn(ip6 ? 'ip6tables' : 'iptables', args);
+            const cmd = ip6 ? 'ip6tables' : 'iptables';
+            const arpscan = childProcess.spawn(cmd, args);
+            if(this.debug) console.log(cmd+' '+args.join(' '));
            
             let buffer = '', errbuffer = '';
             arpscan.stdout.on('data', data => buffer += data);

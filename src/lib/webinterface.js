@@ -79,8 +79,12 @@ class Webinterface {
 
         this.app.put('/api/chain', async (req, res) => {
             if(req.query.name) {
-                await this.main.iptables.addChain(req.query.name, req.query.table, req.query.ip6 == 'true');
-                res.end();
+                try {
+                    await this.main.iptables.addChain(req.query.name, req.query.table, req.query.ip6 == 'true');
+                    res.end();
+                } catch(err) {
+                    res.status(500).end(err);
+                }
             } else {
                 res.status(400).end();
             }
