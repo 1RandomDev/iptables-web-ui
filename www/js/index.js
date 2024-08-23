@@ -10,6 +10,7 @@ const DEFAULT_CHAIN = 'false-filter-FORWARD';
 
 let currentChain;
 let chains = {};
+let numRules = 0;
 
 // Chains
 async function switchChain(id) {
@@ -23,6 +24,10 @@ function updateChainInfo() {
     currentChainElement.innerText = currentChain.name;
     currentChainElement.dataset.edit = 'false';
     document.getElementById('currentChainActions').style.display = currentChain.system ? 'none' : null;
+    const defaultPolicyElement = document.getElementById('currentChainDefaultPolicy'), defaultPolicySelect = defaultPolicyElement.querySelector('select');
+    defaultPolicyElement.style.display = currentChain.system ? null : 'none';
+    defaultPolicySelect.value = currentChain.defaultPolicy;
+    defaultPolicySelect.setAttribute('style', `color: rgb(var(--bs-${currentChain.defaultPolicy == 'ACCEPT' ? 'success' : 'danger'}-rgb)) !important`);
 }
 
 async function loadChains() {
@@ -159,45 +164,73 @@ async function createNewChain(table, ip6, name) {
     await switchChain(ip6+'-'+table+'-'+name);
 }
 
+document.querySelector('#currentChainDefaultPolicy select').addEventListener('change', async event => {
+    if(!currentChain.system) return;
+    try {
+        await setDefaultPolicy(event.target.value);
+        currentChain.defaultPolicy = event.target.value;
+        event.target.setAttribute('style', `color: rgb(var(--bs-${currentChain.defaultPolicy == 'ACCEPT' ? 'success' : 'danger'}-rgb)) !important`);
+    } catch(err) {
+        event.target.value = currentChain.defaultPolicy;
+        showError(err.message);
+    }
+});
+async function setDefaultPolicy(policy) {
+    let res = await fetch(`/api/chain?table=${currentChain.table}&ip6=${currentChain.ip6}&action=setDefaultPolicy&name=${currentChain.name}&policy=${policy}`, { method: 'POST'});
+    if(res.status == 500) throw new Error(await res.text());
+    if(!res.ok) throw new Error('Request failed with status: '+res.status);
+}
+
 // Rules
-async function loadRules() {
+async function loadRules(forceUpdate = true) {
     let res = await fetch(`/api/rules?chain=${currentChain.name}&table=${currentChain.table}&ip6=${currentChain.ip6}`);
     if(res.status == 500) throw new Error(await res.text());
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
     res = await res.json();
 
-    let i = 1;
-    rulesTable.innerHTML = '';
-    if(res.length == 0) {
-        const tableRow = document.createElement('template');
-            tableRow.innerHTML =
-                `<tr>
-                    <td></td>
-                    <td></td>
-                    <td class="text-light">Empty chain</td>
-                    <td></td>
-                </tr>`;
-        rulesTable.appendChild(tableRow.content.firstChild);
-    } else {
-        res.forEach(rule => {
+    // Try detecting changes by other applications by quickly comparing chain length
+    if(forceUpdate || numRules != res.length) {
+        if(!forceUpdate) {
+            showToast({
+                message: 'Iptables rules were changed by other application',
+                type: 'danger'
+            })
+        }
+        let i = 1;
+        rulesTable.innerHTML = '';
+        numRules = res.length;
+        if(res.length == 0) {
             const tableRow = document.createElement('template');
-            tableRow.innerHTML =
-                `<tr id="rule-${i}" data-rule="${rule}">
-                    <td class="handle"></td>
-                    <td>${i}</td>
-                    <td class="rule">${rule}</td>
-                    <td>
-                        <button class="btn-transparent transparentEditBtn" title="Edit" onclick="showEditRuleField(this, ${i})">&nbsp;</button>
-                        <button class="btn-transparent transparentDeleteBtn" title="Delete" onclick="showDeleteRuleModal(this, event.shiftKey, ${i});">&nbsp;</button>
-                    </td>
-                </tr>`;
-           rulesTable.appendChild(tableRow.content.firstChild);
-           i++;
-        });
+                tableRow.innerHTML =
+                    `<tr>
+                        <td></td>
+                        <td></td>
+                        <td class="text-light">Empty chain</td>
+                        <td></td>
+                    </tr>`;
+            rulesTable.appendChild(tableRow.content.firstChild);
+        } else {
+            res.forEach(rule => {
+                const tableRow = document.createElement('template');
+                tableRow.innerHTML =
+                    `<tr id="rule-${i}" data-rule="${rule}">
+                        <td class="handle"></td>
+                        <td>${i}</td>
+                        <td class="rule">${highlightRuleSyntax(rule)}</td>
+                        <td>
+                            <button class="btn-transparent transparentEditBtn" title="Edit" onclick="showEditRuleField(this, ${i})">&nbsp;</button>
+                            <button class="btn-transparent transparentDeleteBtn" title="Delete" onclick="showDeleteRuleModal(this, event.shiftKey, ${i});">&nbsp;</button>
+                        </td>
+                    </tr>`;
+               rulesTable.appendChild(tableRow.content.firstChild);
+               i++;
+            });
+        }
+        addRuleForm.querySelector('.index').placeholder = i;
+        $('#rulesTable').tableDnDUpdate();
     }
-    addRuleForm.querySelector('.index').placeholder = i;
-    $('#rulesTable').tableDnDUpdate();
 }
+setInterval(() => loadRules(false), 60000);
 
 $(document).ready(() => {
     $('#rulesTable').tableDnD({
@@ -259,7 +292,7 @@ function showEditRuleField(button, index) {
     const ruleColumn = row.querySelector('.rule');
     if(row.dataset.edit == 'true') {
         row.dataset.edit = 'false';
-        ruleColumn.innerHTML = row.dataset.rule;
+        ruleColumn.innerHTML = highlightRuleSyntax(row.dataset.rule);
     } else {
         row.dataset.edit = 'true';
         const textField = document.createElement('input');
@@ -268,14 +301,14 @@ function showEditRuleField(button, index) {
         textField.onkeydown = async event => {
             if(event.key == 'Enter') {
                 row.dataset.edit = 'false';
-                if(!textField.value) {
-                    ruleColumn.innerHTML = row.dataset.rule;
+                if(!textField.value || textField.value == row.dataset.rule) {
+                    ruleColumn.innerHTML = highlightRuleSyntax(row.dataset.rule);
                     return;
                 }
                 try {
                     await editRule(index, textField.value);
                 } catch(err) {
-                    ruleColumn.innerHTML = row.dataset.rule;
+                    ruleColumn.innerHTML = highlightRuleSyntax(row.dataset.rule);
                     showError(err.message);
                 }
             }
@@ -332,6 +365,29 @@ async function insertRule(index, value) {
 }
 
 // Common
+function highlightRuleSyntax(rule) {
+    // Link to related chains
+    const matches = rule.match(/\-j (.+?)$/);
+    if(matches) {
+        for(const [id, chain] of Object.entries(chains)) {
+            if(chain.name == matches[1]) {
+                rule = rule.replace(/\-j (.+?)$/, `-j <span class="hl-link" onclick="switchChain('${id}'); return false">$1</span>`);
+                break;
+            }
+        }
+    }
+
+    // Colorize common rule elements
+    return rule.replace(/!/g, '<span class="hl-color-not">!</span>')
+               .replace(/(\-i|\-o) .+?(\s|$)/g, '<span class="hl-color-if">$&</span>')
+               .replace(/(\-s|\-d) .+?(\s|$)/g, '<span class="hl-color-ip">$&</span>')
+               .replace(/(\-p|\-m) (tcp|udp)/g, '<span class="hl-color-tcp">$&</span>')
+               .replace(/--(d|s)port .+?(\s|$)/g, '<span class="hl-color-tcp">$&</span>')
+               .replace(/ACCEPT/, '<span class="text-success">ACCEPT</span>')
+               .replace(/DROP|REJECT/, '<span class="text-danger">$&</span>')
+               .replace(/--reject-with .+?(\s|$)/, '<span class="text-danger">$&</span>');
+}
+
 function showError(message) {
     showToast({
         message: '<b>An internal error occoured:</b><br>'+message.replace('\n', '<br>'),

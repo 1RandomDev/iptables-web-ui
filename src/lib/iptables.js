@@ -66,16 +66,16 @@ class Iptables {
         return parts.join(' ');
     }
     async addRule(chain, value, table = 'filter', ip6 = false) {
-        await this.execute(['-t', table, '-A', chain, ...value.split(' ')], ip6);
+        await this.execute(['-t', table, '-A', chain, ...this.splitRule(value)], ip6);
     }
     async insertRule(chain, index, value, table = 'filter', ip6 = false) {
-        await this.execute(['-t', table, '-I', chain, index, ...value.split(' ')], ip6);
+        await this.execute(['-t', table, '-I', chain, index, ...this.splitRule(value)], ip6);
     }
     async deleteRule(chain, index, table = 'filter', ip6 = false) {
         await this.execute(['-t', table, '-D', chain, index], ip6);
     }
     async editRule(chain, index, newValue, table = 'filter', ip6 = false) {
-        await this.execute(['-t', table, '-R', chain, index, ...newValue.split(' ')], ip6);
+        await this.execute(['-t', table, '-R', chain, index, ...this.splitRule(newValue)], ip6);
     }
     async moveRule(chain, oldIndex, newIndex, table = 'filter', ip6 = false) {
         if(oldIndex == newIndex) return;
@@ -106,6 +106,11 @@ class Iptables {
                 reject(err);
             });
         });
+    }
+
+    splitRule(str) {
+        // Split rule on spaces but keep text in quotes
+        return Array.from(str.matchAll(/[^"\s]+|"([^"]*)"/g), ([a,b]) => b || a) 
     }
 }
 module.exports = Iptables;

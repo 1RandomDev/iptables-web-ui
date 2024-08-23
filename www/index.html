@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iptables Web UI</title>
+    <link rel="icon" type="image/png" href="img/icon.png">
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/index.css">
 </head>
@@ -53,6 +54,13 @@
                 <button class="btn-transparent transparentEditBtn" title="Edit">&nbsp;</button>
                 <button class="btn-transparent transparentDeleteBtn" title="Delete">&nbsp;</button>
             </span>
+        </h5>
+        <h5 id="currentChainDefaultPolicy">
+            Default
+            <select class="form-select input-sm input-dark">
+                <option value="ACCEPT">ACCEPT</option>
+                <option value="DROP">DROP</option>
+            </select>
         </h5>
         <table id="rulesTable" class="table table-striped table-sm mt-3 mb-4">
             <thead>

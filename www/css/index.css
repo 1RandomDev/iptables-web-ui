@@ -25,7 +25,19 @@
     width: 250px;
     display: inline;
 }
+#currentChainDefaultPolicy select {
+    display: inline;
+    width: 100px;
+}
 
+.input-dark {
+    background-color: #4b4b4b;
+    color: white;
+    --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23dee2e6' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+.input-dark:focus {
+    border-color: #505b64;
+}
 .input-sm {
     padding: 1px 4px;
 }
@@ -50,4 +62,23 @@
 }
 .curs-pointer {
     cursor: pointer;
+}
+.hl-color-not {
+    color: #f13e4a;
+}
+.hl-color-ip {
+    color: #a347b4;
+}
+.hl-color-if {
+    color: #2aa0ac;
+}
+.hl-color-tcp {
+    color: #d19360;
+}
+.hl-link {
+    color: #2a7ce0;
+    cursor: pointer;
+}
+.hl-link:hover {
+    text-decoration: underline;
 }
