@@ -1,10 +1,9 @@
 const logoutBtn = document.getElementById('logoutBtn');
+const loadRulesBtn = document.getElementById('loadRulesBtn');
+const saveRulesBtn = document.getElementById('saveRulesBtn');
 const rulesTable = document.querySelector('#rulesTable tbody');
 const addRuleForm = document.getElementById('addRuleForm');
 const currentChainElement = document.getElementById('currentChain');
-const deleteChainModal = document.getElementById('deleteChainModal');
-const createChainModal = document.getElementById('createChainModal');
-const deleteRuleModal = document.getElementById('deleteRuleModal');
 const toastContainer = document.getElementById('toastContainer');
 
 let currentChain, defaultChain;
@@ -105,7 +104,7 @@ async function renameCurrentChain(newName) {
     await switchChain(currentChain.ip6+'-'+currentChain.table+'-'+newName);
 }
 
-document.querySelector('#currentChainActions .transparentDeleteBtn').addEventListener('click', event => {
+document.querySelector('#currentChainActions .transparentDeleteBtn').addEventListener('click', async event => {
     const clickHandler = async () => {
         try {
             await deleteCurrentChain();
@@ -120,9 +119,13 @@ document.querySelector('#currentChainActions .transparentDeleteBtn').addEventLis
     if(event.shiftKey) {
         clickHandler();
     } else {
-        deleteChainModal.querySelector('.chainName').innerText = currentChain.name;
-        deleteChainModal.querySelector('.deleteBtn').onclick = clickHandler;
-        new bootstrap.Modal(deleteChainModal).show();
+        const modalOpts = {
+            type: 'danger',
+            title: 'Delete chain',
+            body: `Are you sure that you want to delete the chain <b>${currentChain.name}</b>?`,
+            acceptText: 'Delete'
+        };
+        if((await showModal(modalOpts)).accept) clickHandler();
     }
 });
 async function deleteCurrentChain() {
@@ -134,27 +137,33 @@ async function deleteCurrentChain() {
     await switchChain(defaultChain);
 }
 
-function showCreateChainModal(table, ip6) {
-    const nameField = document.getElementById('createChainName');
-    const createBtn = createChainModal.querySelector('.createBtn')
-    nameField.value = '';
-    setTimeout(() => nameField.focus(), 50);
-    nameField.onkeydown = event => {
-        if(event.key == 'Enter') createBtn.click();
+async function showCreateChainModal(table, ip6) {
+    const modalOpts = {
+        type: 'success',
+        title: 'Create new chain',
+        body: `<label for="createChainName">Name</label><input class="form-control" id="createChainName" name="chainName">`,
+        acceptText: 'Create',
+        onInit: event => {
+            const nameField = event.modalElement.querySelector('.modal-body input')
+            nameField.onkeydown = event1 => {
+                if(event1.key == 'Enter') event.acceptBtn.click();
+            };
+            setTimeout(() => nameField.focus(), 50);
+        }
     };
-    createBtn.onclick = async () => {
-        if(!nameField.value) return;
+    const modal = await showModal(modalOpts);
+    if(modal.accept) {
+        if(!modal.inputs.chainName) return;
         try {
-            await createNewChain(table, ip6, nameField.value);
+            await createNewChain(table, ip6, modal.inputs.chainName);
             showToast({
-                message: `Chain <b>${nameField.value}</b> successfully created`,
+                message: `Chain <b>${modal.inputs.chainName}</b> successfully created`,
                 type: 'success'
             });
         } catch(err) {
             showError(err.message);
         }
-    };
-    new bootstrap.Modal(createChainModal).show();
+    }
 }
 async function createNewChain(table, ip6, name) {
     let res = await fetch(`/api/chain?table=${table}&ip6=${ip6}&name=${name}`, { method: 'PUT' });
@@ -260,7 +269,7 @@ async function moveRow(oldIndex, newIndex) {
     await loadRules();
 }
 
-function showDeleteRuleModal(button, skipWarning, index) {
+async function showDeleteRuleModal(button, skipWarning, index) {
     const clickHandler = async () => {
         try {
             await deleteRule(index);
@@ -276,9 +285,12 @@ function showDeleteRuleModal(button, skipWarning, index) {
         clickHandler();
     } else {
         const row = button.parentElement.parentElement;
-        deleteRuleModal.querySelector('.rule').innerText = row.dataset.rule;
-        deleteRuleModal.querySelector('.deleteBtn').onclick = clickHandler;
-        new bootstrap.Modal(deleteRuleModal).show();
+        const modalOpts = {
+            type: 'danger',
+            title: 'Delete rule',
+            body: `<p>Are you sure that you want to delete the following rule?</p><b>${row.dataset.rule}</b>`
+        };
+        if((await showModal(modalOpts)).accept) clickHandler();
     }
 }
 async function deleteRule(index) {
@@ -330,8 +342,10 @@ async function editRule(index, newValue) {
     await loadRules();
 }
 
-addRuleForm.querySelector('.value').addEventListener('keydown', event => {
-    if(event.key == 'Enter') addRuleForm.querySelector('.transparentCreateBtn').click();
+addRuleForm.querySelectorAll('input').forEach(input => {
+    input.addEventListener('keydown', event => {
+        if(event.key == 'Enter') addRuleForm.querySelector('.transparentCreateBtn').click();
+    });
 });
 addRuleForm.querySelector('.transparentCreateBtn').addEventListener('click', async () => {
     const indexField = addRuleForm.querySelector('.index');
@@ -364,6 +378,51 @@ async function insertRule(index, value) {
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
     await loadRules();
 }
+
+// Load & save
+saveRulesBtn.addEventListener('click', async () => {
+    const modalOpts = {
+        type: 'success',
+        title: 'Save rules',
+        body: 'Are you sure that you want to save the current rules?',
+        acceptText: 'Save'
+    };
+    if((await showModal(modalOpts)).accept) {
+        try {
+            let res = await fetch(`/api/save`, { method: 'POST' });
+            if(res.status == 500) throw new Error(await res.text());
+            if(!res.ok) throw new Error('Request failed with status: '+res.status);
+            showToast({
+                message: `Configuration saved`,
+                type: 'info'
+            });
+        } catch(err) {
+            showError(err.message);
+        }
+    }
+});
+loadRulesBtn.addEventListener('click', async () => {
+    const modalOpts = {
+        type: 'success',
+        title: 'Load rules',
+        body: 'Are you sure that you want to load the previous configuration? Current rules will be overwritten.',
+        acceptText: 'Save'
+    };
+    if((await showModal(modalOpts)).accept) {
+        try {
+            let res = await fetch(`/api/restore`, { method: 'POST' });
+            if(res.status == 500) throw new Error(await res.text());
+            if(!res.ok) throw new Error('Request failed with status: '+res.status);
+            await loadRules();
+            showToast({
+                message: `Configuration loaded`,
+                type: 'info'
+            });
+        } catch(err) {
+            showError(err.message);
+        }
+    }
+});
 
 // Common
 function highlightRuleSyntax(rule) {
@@ -411,10 +470,48 @@ function showToast(data) {
     toastContainer.appendChild(toastElement);
     new bootstrap.Toast(toastElement).show();
 }
+function showModal(data) {
+    return new Promise(resolve => {
+        let modalElement = document.createElement('template');
+        modalElement.innerHTML =
+        `<div class="modal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">${data.title}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">${data.body}</div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-${data.type || 'primary'} acceptBtn">${data.acceptText || 'Confirm'}</button>
+                </div>
+                </div>
+            </div>
+        </div>`;
+        modalElement = modalElement.content.firstChild;
+        const modal = new bootstrap.Modal(modalElement), acceptBtn = modalElement.querySelector('.acceptBtn');
+        document.body.appendChild(modalElement);
+        if(data.onInit) data.onInit({modal, modalElement, acceptBtn});
+
+        acceptBtn.addEventListener('click', () => {
+            const status = {accept: true, inputs: {}};
+            modalElement.querySelectorAll('.modal-body input[name]').forEach(input => {
+                status.inputs[input.name] = input.value;
+            });
+            resolve(status);
+            modal.hide();
+        });
+        modalElement.addEventListener('hidden.bs.modal', () => {
+            modalElement.remove();
+            resolve({accept: false});
+        });
+        modal.show();
+    });
+}
 
 if(document.cookie.includes('token=')) logoutBtn.classList.remove('d-none');
-logoutBtn.addEventListener('click', async function(event) {
-    event.preventDefault();
+logoutBtn.addEventListener('click', async () => {
     let res = await fetch('/api/logout', { method: 'POST' });
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
     window.location.replace('/login.html');

@@ -12,7 +12,9 @@
 <body>
     <div class="container">
         <div class="clearfix float-end mt-3">
-            <a href="" id="logoutBtn" class="d-none">Logout</a>
+            <button id="loadRulesBtn" class="btn btn-link p-1">Laden</button>
+            <button id="saveRulesBtn" class="btn btn-link p-1">Speichern</button>
+            <button id="logoutBtn" class="d-none btn btn-link p-1 link-danger">Logout</button>
         </div>
 
         <div id="chainSelect" class="btn-group mt-5 top-0 start-50 translate-middle-x">
@@ -82,63 +84,6 @@
                 </tr>
             </tfoot>
         </table>
-    </div>
-
-    <!-- Chains -->
-    <div class="modal" tabindex="-1" id="deleteChainModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Delete chain</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure that you want to delete the chain <b class="chainName"></b>?</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-danger deleteBtn" data-bs-dismiss="modal">Delete</button>
-            </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal" tabindex="-1" id="createChainModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Create new chain</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <label for="createChainName">Name</label>
-                <input class="form-control" id="createChainName" autocomplete="off">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-success createBtn" data-bs-dismiss="modal">Create</button>
-            </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Rules -->
-    <div class="modal" tabindex="-1" id="deleteRuleModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Delete rule</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure that you want to delete the following rule?</p>
-                <b class="rule"></b>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-danger deleteBtn" data-bs-dismiss="modal">Delete</button>
-            </div>
-            </div>
-        </div>
     </div>
 
     <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>

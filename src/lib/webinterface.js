@@ -209,6 +209,16 @@ class Webinterface {
             }
         });
 
+        // Save & restore
+        this.app.post('/api/save', async (req, res) => {
+            await this.main.iptables.saveRules(this.main.config.excludedChains);
+            res.end();
+        });
+        this.app.post('/api/restore', async (req, res) => {
+            await this.main.iptables.restoreRules(this.main.config.flushOnRestore);
+            res.end();
+        });
+
         // Login
         this.app.post('/api/login', (req, res) => {
             const data = req.body;
