@@ -18,6 +18,9 @@
     text-align: center;
     width: 46px;
 }
+#rulesTable tr td:nth-child(4) {
+    width: 50px;
+}
 #rulesTable .index {
     text-align: center;
 }

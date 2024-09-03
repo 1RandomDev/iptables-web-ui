@@ -6,6 +6,7 @@ class Main {
     async start() {
         this.config = {
             debugMode: process.env.DEBUG_MODE == 'true',
+            defaultChain: process.env.DEFAULT_CHAIN || 'false-filter-INPUT',
 
             webuiHost: process.env.WEBUI_HOST || '0.0.0.0',
             webuiPort: process.env.WEBUI_PORT || 8585,

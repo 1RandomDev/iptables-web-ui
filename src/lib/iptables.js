@@ -35,6 +35,7 @@ class Iptables {
         await this.execute(['-t', table, '-N', name], ip6);
     }
     async deleteChain(name, table = 'filter', ip6 = false) {
+        await this.execute(['-t', table, '-F', name], ip6);
         await this.execute(['-t', table, '-X', name], ip6);
     }
     async renameChain(oldName, newName, table = 'filter', ip6 = false) {

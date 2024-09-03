@@ -1,6 +1,6 @@
 FROM node:lts-alpine
 
-RUN apk add iptables
+RUN apk add iptables xtables-addons
 
 COPY . /app
 WORKDIR /app

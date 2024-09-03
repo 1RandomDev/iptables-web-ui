@@ -71,7 +71,7 @@ class Webinterface {
         this.app.get('/api/chain', async (req, res) => {
             try {
                 const chains = await this.main.iptables.listChains(req.query.table, req.query.ip6 == 'true');
-                res.json(chains);
+                res.json({ defaultChain: this.main.config.defaultChain, chains: chains });
             } catch(err) {
                 res.status(500).end(err);
             }

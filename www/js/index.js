@@ -6,9 +6,8 @@ const deleteChainModal = document.getElementById('deleteChainModal');
 const createChainModal = document.getElementById('createChainModal');
 const deleteRuleModal = document.getElementById('deleteRuleModal');
 const toastContainer = document.getElementById('toastContainer');
-const DEFAULT_CHAIN = 'false-filter-FORWARD';
 
-let currentChain;
+let currentChain, defaultChain;
 let chains = {};
 let numRules = 0;
 
@@ -21,6 +20,7 @@ async function switchChain(id) {
 
 function updateChainInfo() {
     document.getElementById('currentTable').innerText = currentChain.table;
+    document.getElementById('currentIPversion').innerText = currentChain.ip6 ? 'IPv6' : 'IPv4';
     currentChainElement.innerText = currentChain.name;
     currentChainElement.dataset.edit = 'false';
     document.getElementById('currentChainActions').style.display = currentChain.system ? 'none' : null;
@@ -33,15 +33,16 @@ function updateChainInfo() {
 async function loadChains() {
     for(const element of document.querySelectorAll('#chainSelect [data-table]')) {
         const table = element.dataset.table;
-        const ip6 = element.dataset.ip6;
+        const ip6 = element.dataset.ip6 == 'true';
         let html = '';
     
         let res = await fetch(`/api/chain?table=${table}&ip6=${ip6}`);
         if(res.status == 500) throw new Error(await res.text());
         if(!res.ok) throw new Error('Request failed with status: '+res.status);
         res = await res.json();
+        defaultChain = res.defaultChain;
         
-        res.forEach(chain => {
+        res.chains.forEach(chain => {
             chain.table = table;
             chain.ip6 = ip6;
             const chainId = ip6+'-'+table+'-'+chain.name;
@@ -54,7 +55,7 @@ async function loadChains() {
         element.querySelector('.dropdown-menu').innerHTML = html;
     }
 
-    if(!currentChain) await switchChain(DEFAULT_CHAIN);
+    if(!currentChain) await switchChain(defaultChain);
 }
 loadChains();
 
@@ -130,7 +131,7 @@ async function deleteCurrentChain() {
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
 
     await loadChains();
-    await switchChain(DEFAULT_CHAIN);
+    await switchChain(defaultChain);
 }
 
 function showCreateChainModal(table, ip6) {
@@ -369,11 +370,9 @@ function highlightRuleSyntax(rule) {
     // Link to related chains
     const matches = rule.match(/\-j (.+?)$/);
     if(matches) {
-        for(const [id, chain] of Object.entries(chains)) {
-            if(chain.name == matches[1]) {
-                rule = rule.replace(/\-j (.+?)$/, `-j <span class="hl-link" onclick="switchChain('${id}'); return false">$1</span>`);
-                break;
-            }
+        const chainId = currentChain.ip6+'-'+currentChain.table+'-'+matches[1];
+        if(chains[chainId]) {
+            rule = rule.replace(/\-j (.+?)$/, `-j <span class="hl-link" onclick="switchChain('${chainId}');">$1</span>`);
         }
     }
 
@@ -383,8 +382,8 @@ function highlightRuleSyntax(rule) {
                .replace(/(\-s|\-d) .+?(\s|$)/g, '<span class="hl-color-ip">$&</span>')
                .replace(/(\-p|\-m) (tcp|udp)/g, '<span class="hl-color-tcp">$&</span>')
                .replace(/--(d|s)port .+?(\s|$)/g, '<span class="hl-color-tcp">$&</span>')
-               .replace(/ACCEPT/, '<span class="text-success">ACCEPT</span>')
-               .replace(/DROP|REJECT/, '<span class="text-danger">$&</span>')
+               .replace('-j ACCEPT', '-j <span class="text-success">ACCEPT</span>')
+               .replace(/-j (DROP|REJECT)/, '-j <span class="text-danger">$1</span>')
                .replace(/--reject-with .+?(\s|$)/, '<span class="text-danger">$&</span>');
 }
 
