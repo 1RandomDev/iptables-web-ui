@@ -70,10 +70,12 @@ class Webinterface {
         // Chains
         this.app.get('/api/chain', async (req, res) => {
             try {
+                const chainId = this.getChainId(req.query.ip6, req.query.table, '');
                 const chains = await this.main.iptables.listChains(req.query.table, req.query.ip6 == 'true');
+                chains.forEach(chain => chain.dynamic = this.main.data.dynamicChains.includes(chainId+chain.name));
                 res.json({ defaultChain: this.main.config.defaultChain, chains: chains });
             } catch(err) {
-                res.status(500).end(err);
+                res.status(500).end(err.message);
             }
         });
 
@@ -83,7 +85,7 @@ class Webinterface {
                     await this.main.iptables.addChain(req.query.name, req.query.table, req.query.ip6 == 'true');
                     res.end();
                 } catch(err) {
-                    res.status(500).end(err);
+                    res.status(500).end(err.message);
                 }
             } else {
                 res.status(400).end();
@@ -96,7 +98,7 @@ class Webinterface {
                     await this.main.iptables.deleteChain(req.query.name, req.query.table, req.query.ip6 == 'true');
                     res.end()
                 } catch(err) {
-                    res.status(500).end(err);
+                    res.status(500).end(err.message);
                 }
             } else {
                 res.status(400).end();
@@ -126,11 +128,29 @@ class Webinterface {
                         await this.main.iptables.setDefaultPolicy(req.query.name, req.query.policy, req.query.table, req.query.ip6 == 'true');
                         res.end();
                         break;
+                    case 'setDynamic':
+                        const chainId = this.getChainId(req.query.ip6, req.query.table, req.query.name);
+                        if(req.query.dynamic == 'true') {
+                            if(!this.main.data.dynamicChains.includes(chainId)) {
+                                this.main.data.dynamicChains.push(chainId);
+                                this.main.saveData();
+                            }
+                            res.end();
+                        } else if(req.query.dynamic == 'false') {
+                            if(this.main.data.dynamicChains.includes(chainId)) {
+                                this.main.data.dynamicChains = this.main.data.dynamicChains.filter(id => id != chainId);
+                                this.main.saveData();
+                            }
+                            res.end();
+                        } else {
+                            res.status(400).end('Missing parameters for setDynamic');
+                        }
+                        break;
                     default:
                         res.status(400).end('Unknown action');
                 }
             } catch(err) {
-                res.status(500).end(err);
+                res.status(500).end(err.message);
             }
         });
 
@@ -141,7 +161,7 @@ class Webinterface {
                     const chains = await this.main.iptables.listRules(req.query.chain, req.query.table, req.query.ip6 == 'true');
                     res.json(chains);
                 } catch(err) {
-                    res.status(500).end(err);
+                    res.status(500).end(err.message);
                 }
             } else {
                 res.status(400).end();
@@ -158,7 +178,7 @@ class Webinterface {
                     }
                     res.end();
                 } catch(err) {
-                    res.status(500).end(err);
+                    res.status(500).end(err.message);
                 }
             } else {
                 res.status(400).end();
@@ -171,7 +191,7 @@ class Webinterface {
                     await this.main.iptables.deleteRule(req.query.chain, req.query.index, req.query.table, req.query.ip6 == 'true');
                     res.end();
                 } catch(err) {
-                    res.status(500).end(err);
+                    res.status(500).end(err.message);
                 }
             } else {
                 res.status(400).end();
@@ -205,13 +225,13 @@ class Webinterface {
                         res.status(400).end('Unknown action');
                 }
             } catch(err) {
-                res.status(500).end(err);
+                res.status(500).end(err.message);
             }
         });
 
         // Save & restore
         this.app.post('/api/save', async (req, res) => {
-            await this.main.iptables.saveRules(this.main.config.excludedChains);
+            await this.main.iptables.saveRules(this.main.data.dynamicChains);
             res.end();
         });
         this.app.post('/api/restore', async (req, res) => {
@@ -264,6 +284,10 @@ class Webinterface {
         } catch(err) {
             return false;
         }
+    }
+
+    getChainId(ipv6, table, chain) {
+        return `${ipv6 == 'true'}-${table || 'filter'}-${chain}`;
     }
 }
 

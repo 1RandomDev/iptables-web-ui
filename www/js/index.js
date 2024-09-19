@@ -3,6 +3,7 @@ const loadRulesBtn = document.getElementById('loadRulesBtn');
 const saveRulesBtn = document.getElementById('saveRulesBtn');
 const rulesTable = document.querySelector('#rulesTable tbody');
 const addRuleForm = document.getElementById('addRuleForm');
+const saveChainToggle = document.getElementById('saveChainToggle');
 const currentChainElement = document.getElementById('currentChain');
 const toastContainer = document.getElementById('toastContainer');
 
@@ -24,9 +25,10 @@ function updateChainInfo() {
     currentChainElement.dataset.edit = 'false';
     document.getElementById('currentChainActions').style.display = currentChain.system ? 'none' : null;
     const defaultPolicyElement = document.getElementById('currentChainDefaultPolicy'), defaultPolicySelect = defaultPolicyElement.querySelector('select');
-    defaultPolicyElement.style.display = currentChain.system ? null : 'none';
+    defaultPolicyElement.style.display = (currentChain.system && currentChain.table == 'filter') ? null : 'none';
     defaultPolicySelect.value = currentChain.defaultPolicy;
     defaultPolicySelect.setAttribute('style', `color: rgb(var(--bs-${currentChain.defaultPolicy == 'ACCEPT' ? 'success' : 'danger'}-rgb)) !important`);
+    saveChainToggle.checked = !currentChain.dynamic;
 }
 
 async function loadChains() {
@@ -56,7 +58,6 @@ async function loadChains() {
 
     if(!currentChain) await switchChain(defaultChain);
 }
-loadChains();
 
 document.querySelector('#currentChainActions .transparentEditBtn').addEventListener('click', () => {
     if(currentChain.system) return;
@@ -190,6 +191,20 @@ async function setDefaultPolicy(policy) {
     if(res.status == 500) throw new Error(await res.text());
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
 }
+saveChainToggle.addEventListener('change', async event => {
+    try {
+        await setChainDynamic(!event.target.checked);
+        currentChain.dynamic = !event.target.checked;
+    } catch(err) {
+        event.target.value = currentChain.defaultPolicy;
+        showError(err.message);
+    }
+});
+async function setChainDynamic(dynamic) {
+    let res = await fetch(`/api/chain?table=${currentChain.table}&ip6=${currentChain.ip6}&action=setDynamic&name=${currentChain.name}&dynamic=${dynamic}`, { method: 'POST'});
+    if(res.status == 500) throw new Error(await res.text());
+    if(!res.ok) throw new Error('Request failed with status: '+res.status);
+}
 
 // Rules
 async function loadRules(forceUpdate = true) {
@@ -240,27 +255,7 @@ async function loadRules(forceUpdate = true) {
         $('#rulesTable').tableDnDUpdate();
     }
 }
-setInterval(() => loadRules(false), 60000);
 
-$(document).ready(() => {
-    $('#rulesTable').tableDnD({
-        onDrop: async (table, draggedRow) => {
-            let newIndex, oldIndex = draggedRow.id.replace('rule-', '');
-            let i = 1;
-            for(const row of rulesTable.children) {
-                if(row == draggedRow) newIndex = i;
-                i++;
-            }
-            try {
-                await moveRow(oldIndex, newIndex)
-            } catch(err) {
-                showError(err.message);
-            }
-        },
-        dragHandle: '.handle',
-        onDragClass: 'isDragged'
-    });
-});
 async function moveRow(oldIndex, newIndex) {
     if(oldIndex == newIndex) return;
     let res = await fetch(`/api/rules?table=${currentChain.table}&ip6=${currentChain.ip6}&chain=${currentChain.name}&action=move&index=${oldIndex}&newIndex=${newIndex}`, { method: 'POST' });
@@ -425,6 +420,39 @@ loadRulesBtn.addEventListener('click', async () => {
 });
 
 // Common
+document.addEventListener('DOMContentLoaded', async () => {
+    $('#rulesTable').tableDnD({
+        onDrop: async (table, draggedRow) => {
+            let newIndex, oldIndex = draggedRow.id.replace('rule-', '');
+            let i = 1;
+            for(const row of rulesTable.children) {
+                if(row == draggedRow) newIndex = i;
+                i++;
+            }
+            try {
+                await moveRow(oldIndex, newIndex)
+            } catch(err) {
+                showError(err.message);
+            }
+        },
+        dragHandle: '.handle',
+        onDragClass: 'isDragged'
+    });
+
+    try {
+        await loadChains();
+    } catch(err) {
+        showError(err.message);
+    }
+    setInterval(() => {
+        try {
+            loadRules(false)
+        } catch(err) {
+            showError(err.message);
+        }
+    }, 60000);
+});
+
 function highlightRuleSyntax(rule) {
     // Link to related chains
     const matches = rule.match(/\-j (.+?)$/);

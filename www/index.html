@@ -57,13 +57,17 @@
                 <button class="btn-transparent transparentDeleteBtn" title="Delete">&nbsp;</button>
             </span>
         </h5>
-        <h5 id="currentChainDefaultPolicy">
+        <div class="mb-1" id="currentChainDefaultPolicy">
             Default
             <select class="form-select input-sm input-dark">
                 <option value="ACCEPT">ACCEPT</option>
                 <option value="DROP">DROP</option>
             </select>
-        </h5>
+        </div>
+        <div class="form-check form-check-reverse form-switch float-start mb-1">
+            <input class="form-check-input checkbox-info" type="checkbox" id="saveChainToggle">
+            <label class="form-check-label" for="saveChainToggle">Save chain</label>
+        </div>
         <table id="rulesTable" class="table table-striped table-sm mt-3 mb-4">
             <thead>
                 <tr>

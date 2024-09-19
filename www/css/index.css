@@ -32,7 +32,14 @@
     display: inline;
     width: 100px;
 }
+#currentChainDefaultPolicy, #saveChainToggle, label[for="saveChainToggle"] {
+    font-size: 1.1rem;
+}
 
+.checkbox-info:checked {
+    background-color: var(--bs-info);
+    border-color: var(--bs-info);
+}
 .input-dark {
     background-color: #4b4b4b;
     color: white;

@@ -119,10 +119,6 @@ class Iptables {
                 if(excludedChains.includes(ip6+'-'+table+'-'+chain)) continue;
                 switch(type) {
                     case 'P':
-                        if(excludedChains.includes('SYSTEM')) {
-                            excludedChains.push(ip6+'-'+table+'-'+chain);
-                            continue;
-                        }
                         out += `:${chain} ${value} [0:0]\n`;
                         break;
                     case 'N':
@@ -154,14 +150,14 @@ class Iptables {
     
             arpscan.on('close', code => {
                 if(code != 0) {
-                    reject(errbuffer.trim());
+                    reject(new Error(errbuffer.trim()));
                     return;
                 }
                 resolve(buffer);
             });
     
             arpscan.on('error', err => {
-                reject(err);
+                reject(new Error(err));
             });
         });
     }
