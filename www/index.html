@@ -12,43 +12,41 @@
 <body>
     <div class="container">
         <div class="clearfix float-end mt-3">
-            <button id="loadRulesBtn" class="btn btn-link p-1">Laden</button>
-            <button id="saveRulesBtn" class="btn btn-link p-1">Speichern</button>
+            <button id="loadRulesBtn" class="btn btn-link p-1">Load</button>
+            <button id="saveRulesBtn" class="btn btn-link p-1">Save</button>
             <button id="logoutBtn" class="d-none btn btn-link p-1 link-danger">Logout</button>
         </div>
 
-        <div id="chainSelect" class="btn-group mt-5 top-0 start-50 translate-middle-x">
-            <div class="btn-group" role="group" data-table="filter" data-ip6="false">
-                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">Filter v4</button>
-                <ul class="dropdown-menu"></ul>
+        <div id="chainSelect" class="btn-group-split flex-wrap justify-content-center mt-5 top-0 start-50 translate-middle-x">
+            <div class="btn-group mb-2">
+                <div class="btn-group" role="group" data-table="filter" data-ip6="false">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">Filter v4</button>
+                    <ul class="dropdown-menu"></ul>
+                </div>
+                <div class="btn-group" role="group" data-table="nat" data-ip6="false">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">NAT v4</button>
+                    <ul class="dropdown-menu"></ul>
+                </div>
+                <div class="btn-group" role="group" data-table="mangle" data-ip6="false">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">Mangle v4</button>
+                    <ul class="dropdown-menu"></ul>
+                </div>
             </div>
-            <div class="btn-group" role="group" data-table="nat" data-ip6="false">
-                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">NAT v4</button>
-                <ul class="dropdown-menu"></ul>
+            <div class="btn-group mb-2">
+                <div class="btn-group" role="group" data-table="filter" data-ip6="true">
+                    <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">Filter v6</button>
+                    <ul class="dropdown-menu"></ul>
+                </div>
+                <div class="btn-group" role="group" data-table="nat" data-ip6="true">
+                    <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">NAT v6</button>
+                    <ul class="dropdown-menu"></ul>
+                </div>
+                <div class="btn-group" role="group" data-table="mangle" data-ip6="true">
+                    <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">Mangle v6</button>
+                    <ul class="dropdown-menu"></ul>
+                </div>
             </div>
-            <div class="btn-group" role="group" data-table="mangle" data-ip6="false">
-                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">Mangle v4</button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#">Dropdown link</a></li>
-                    <li><a class="dropdown-item" href="#">Dropdown link</a></li>
-                </ul>
-            </div>
-            <div class="btn-group" role="group" data-table="filter" data-ip6="true">
-                <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">Filter v6</button>
-                <ul class="dropdown-menu"></ul>
-            </div>
-            <div class="btn-group" role="group" data-table="nat" data-ip6="true">
-                <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">NAT v6</button>
-                <ul class="dropdown-menu"></ul>
-            </div>
-            <div class="btn-group" role="group" data-table="mangle" data-ip6="true">
-                <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">Mangle v6</button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#">Dropdown link</a></li>
-                    <li><a class="dropdown-item" href="#">Dropdown link</a></li>
-                </ul>
-            </div>
-        </div><br>
+        </div>
 
         <h5 class="fw-bold mt-5">
             <span id="currentIPversion">-</span> <span class="text-light">/</span> <span id="currentTable">-</span> <span class="text-light">/</span> <span id="currentChain">-</span>
@@ -82,7 +80,7 @@
             <tfoot>
                 <tr id="addRuleForm">
                     <td></td>
-                    <td><input type="text" class="index form-control input-sm" placeholder="7" autocomplete="off"></td>
+                    <td><input type="text" class="index form-control input-sm" placeholder="1" autocomplete="off"></td>
                     <td><input class="value form-control input-sm" placeholder="New Rule" autocomplete="off"></td>
                     <td><button class="btn-transparent transparentCreateBtn" title="Create">&nbsp;</button></td>
                 </tr>

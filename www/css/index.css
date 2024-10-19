@@ -70,6 +70,19 @@
     border: 0;
     outline: 0;
 }
+.btn-group-split {
+    position: relative;
+    display: inline-flex;
+    vertical-align: middle;
+}
+.btn-group-split > .btn-group:first-child .btn-group:last-of-type .btn {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.btn-group-split > .btn-group:last-child .btn-group:first-of-type .btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
 .curs-pointer {
     cursor: pointer;
 }
