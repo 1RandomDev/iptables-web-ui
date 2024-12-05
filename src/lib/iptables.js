@@ -1,6 +1,6 @@
 const childProcess = require('child_process');
 const fs = require('fs');
-const SUPPORTED_TABLES = ['filter', 'nat', 'mangle'];
+const SUPPORTED_TABLES = ['filter', 'nat', 'mangle', 'raw'];
 const IPTABLES_SAVE_PATH = '/etc/iptables';
 
 class Iptables {
