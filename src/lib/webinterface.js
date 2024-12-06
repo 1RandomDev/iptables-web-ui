@@ -13,7 +13,7 @@ class Webinterface {
 
         if(this.adminPassword && !this.jwtKey) {
             this.jwtKey = this.generateRandomKey();
-            console.warn('WEBUI_JWT_KEY is not set. Generating random key, this will lead to all users being logged out.');
+            console.warn('JWT secret is not set. Generating random key, this will lead to all users being logged out.');
         }
     }
 
@@ -237,6 +237,32 @@ class Webinterface {
         this.app.post('/api/restore', async (req, res) => {
             await this.main.iptables.restoreRules(this.main.config.flushOnRestore);
             res.end();
+        });
+
+        // Conntrack
+        this.app.get('/api/conntrack', async (req, res) => {
+            try {
+                const entries = await this.main.conntrack.listEntries();
+                res.set('Content-Type', 'application/xml');
+                res.end(entries);
+            } catch(err) {
+                res.status(500).end(err.message);
+            }
+        });
+        this.app.delete('/api/conntrack', async (req, res) => {
+            try {
+                if(req.query.id) {
+                    await this.main.conntrack.deleteEntry(req.query.id);
+                    res.end();
+                } else if(req.query.flush) {
+                    await this.main.conntrack.flushTable();
+                    res.end();
+                } else {
+                    res.status(400).end();
+                }
+            } catch(err) {
+                res.status(500).end(err.message);
+            }
         });
 
         // Login

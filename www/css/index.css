@@ -35,57 +35,10 @@
 #currentChainDefaultPolicy, #saveChainToggle, label[for="saveChainToggle"] {
     font-size: 1.1rem;
 }
+#chainSelect {
+    margin-top: 4rem;
+}
 
-.checkbox-info:checked {
-    background-color: var(--bs-info);
-    border-color: var(--bs-info);
-}
-.input-dark {
-    background-color: #4b4b4b;
-    color: white;
-    --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23dee2e6' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-}
-.input-dark:focus {
-    border-color: #505b64;
-}
-.input-sm {
-    padding: 1px 4px;
-}
-.transparentDeleteBtn {
-    background: no-repeat center url(../img/trash.svg);
-    width: 14px;
-    margin: 0 2px;
-}
-.transparentEditBtn {
-    background: no-repeat center url(../img/edit.svg);
-    width: 16px;
-    margin: 0 2px;
-}
-.transparentCreateBtn {
-    background: no-repeat center url(../img/create.svg);
-    width: 20px;
-    margin: 0 2px;
-}
-.btn-transparent {
-    border: 0;
-    outline: 0;
-}
-.btn-group-split {
-    position: relative;
-    display: inline-flex;
-    vertical-align: middle;
-}
-.btn-group-split > .btn-group:first-child .btn-group:last-of-type .btn {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-}
-.btn-group-split > .btn-group:last-child .btn-group:first-of-type .btn {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-}
-.curs-pointer {
-    cursor: pointer;
-}
 .hl-color-not {
     color: #f13e4a;
 }

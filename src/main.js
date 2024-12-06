@@ -1,3 +1,4 @@
+const Conntrack = require('./lib/conntrack');
 const Iptables = require('./lib/iptables');
 const Webinterface = require('./lib/webinterface');
 const fs = require('fs');
@@ -31,6 +32,7 @@ class Main {
         }
         
         this.iptables = new Iptables(this.config.debugMode);
+        this.conntrack = new Conntrack(this.config.debugMode);
 
         this.webinterface = new Webinterface(this.config.webuiHost, this.config.webuiPort, this.config.webuiPassword, this.data.jwtSecret, this);
         this.webinterface.start();

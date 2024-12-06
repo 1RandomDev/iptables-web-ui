@@ -8,5 +8,4 @@ services:
     environment:
       - TZ=<timezone>
       - WEBUI_PASSWORD=<my_password>
-      - WEBUI_JWT_KEY=<long_random_string>
     restart: unless-stopped

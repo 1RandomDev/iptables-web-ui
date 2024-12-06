@@ -1,11 +1,11 @@
-const childProcess = require('child_process');
 const fs = require('fs');
+const CLIWrapper = require('./cli-wrapper')
 const SUPPORTED_TABLES = ['filter', 'nat', 'mangle', 'raw'];
 const IPTABLES_SAVE_PATH = '/etc/iptables';
 
-class Iptables {
+class Iptables extends CLIWrapper {
     constructor(debug) {
-        this.debug = debug;
+        super(debug);
     }
 
     // Chains
@@ -138,28 +138,6 @@ class Iptables {
 
     executeIptables(args, ip6) {
         return this.executeCommand(ip6 ? 'ip6tables' : 'iptables', args);
-    }
-    executeCommand(cmd, args) {
-        return new Promise((resolve, reject) => {
-            const arpscan = childProcess.spawn(cmd, args);
-            if(this.debug) console.log(cmd+' '+args.join(' '));
-           
-            let buffer = '', errbuffer = '';
-            arpscan.stdout.on('data', data => buffer += data);
-            arpscan.stderr.on('data', data => errbuffer += data);
-    
-            arpscan.on('close', code => {
-                if(code != 0) {
-                    reject(new Error(errbuffer.trim()));
-                    return;
-                }
-                resolve(buffer);
-            });
-    
-            arpscan.on('error', err => {
-                reject(new Error(err));
-            });
-        });
     }
 
     splitRule(str) {

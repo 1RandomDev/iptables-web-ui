@@ -1,0 +1,30 @@
+.connectionsTitle .btn-transparent {
+    margin-left: 10px;
+    height: 20px;
+    width: 20px;
+}
+
+.hl-proto-tcp {
+    color: #b3c73f;
+}
+.hl-proto-udp {
+    color: #30b8a6;
+}
+.hl-proto-icmp, .hl-proto-icmpv6 {
+    color: #e0732a;
+}
+.hl-proto-l3 {
+    color: #a347b4;
+}
+.hl-proto-l4 {
+    color: #d19360;
+}
+.hl-state-established, .hl-state-new, .hl-state-related, .hl-state-assured {
+    color: #39dd62;
+}
+.hl-state-syn_sent, .hl-state-syn_recv, .hl-state-fin_wait, .hl-state-close_wait, .hl-state-unreplied {
+    color: #ffff00;
+}
+.hl-state-time_wait, .hl-state-close, .hl-state-unacknowledged {
+    color: #da4141;
+}
