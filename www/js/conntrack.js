@@ -103,7 +103,7 @@ function formatDuration(duration) {
     if(day) {
         return `${day}d ${hour}h`;
     } else if(hour) {
-        return `${hour}h ${min}min`;
+        return `${hour}h ${minute}min`;
     } else if(minute) {
         return `${minute}min ${second}s`;
     } else {
