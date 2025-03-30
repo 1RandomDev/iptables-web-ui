@@ -12,7 +12,7 @@ class Main {
             flushOnRestore: process.env.FLUSH_ON_RESTORE != 'false',
             dataDirectory: process.env.DATA_DIRECTORY || './data',
 
-            webuiHost: process.env.WEBUI_HOST || '0.0.0.0',
+            webuiHost: process.env.WEBUI_HOST,
             webuiPort: process.env.WEBUI_PORT || 8585,
             webuiPassword: process.env.WEBUI_PASSWORD
         };
