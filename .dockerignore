@@ -1,4 +1,6 @@
-node_modules/
-assets/
 .git/
+assets/
+node_modules/
+data/
 .env
+build-docker.sh
