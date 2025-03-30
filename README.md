@@ -18,7 +18,7 @@ A web-based manager for Iptables rules that uses the same syntax as the `iptable
 ```bash
 docker run -d --name=iptables-web-ui \
     --network=host \
-    -v data:/data \
+    -v data:/app/data \
     -v /etc/iptables:/etc/iptables \
     -e TZ=<timezone> \
     -e WEBUI_PASSWORD=<my_secret_password> \
@@ -35,7 +35,7 @@ services:
     cap_add:
       - NET_ADMIN
     volumes:
-      - iptables-web-ui_data:/data
+      - iptables-web-ui_data:/app/data
       - /etc/iptables:/etc/iptables # Optional, necessary for saving lists for iptables-persistent
     environment:
       - TZ=<timezone>
@@ -52,5 +52,5 @@ For all available options see [docker-compose.yml](https://github.com/1RandomDev
 | WEBUI_HOST | Ip address the web interface listens on. | *all* |
 | WEBUI_PORT | Port the web interface listens on. | `8585` |
 | WEBUI_PASSWORD | Super secret web interface password. | *none* |
-| DATA_DIRECTORY | Path for saving keys and user configurations. | `/data` |
+| DATA_DIRECTORY | Path for saving keys and user configurations. | `/app/data` |
 | DEBUG_MODE | Print executed iptables commands for debug purposes. | `false` |

@@ -6,7 +6,7 @@ services:
     cap_add:
      - NET_ADMIN
     volumes:
-      - iptables-web-ui_data:/data
+      - iptables-web-ui_data:/app/data
       - /etc/iptables:/etc/iptables # Optional, necessary for saving lists for iptables-persistent
     environment:
       - TZ=<timezone>
