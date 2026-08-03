@@ -2,7 +2,7 @@ const Conntrack = require('./lib/conntrack');
 const Iptables = require('./lib/iptables');
 const Webinterface = require('./lib/webinterface');
 const fs = require('fs');
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
 class Main {
     async start() {
