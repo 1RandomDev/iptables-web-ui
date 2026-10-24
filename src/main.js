@@ -10,6 +10,7 @@ class Main {
             debugMode: process.env.DEBUG_MODE == 'true',
             defaultChain: this.migrateChainId(process.env.DEFAULT_CHAIN || 'ip4-filter-INPUT'),
             flushOnRestore: process.env.FLUSH_ON_RESTORE != 'false',
+            excludeByDefault: process.env.EXCLUDE_BY_DEFAULT == 'true',
             dataDirectory: process.env.DATA_DIRECTORY || './data',
 
             webuiHost: process.env.WEBUI_HOST,
@@ -24,7 +25,7 @@ class Main {
 
         this.data = {
             jwtSecret: '',
-            dynamicChains: []
+            chains: {}
         };
         if(!fs.existsSync(this.config.dataDirectory)) {
             fs.mkdirSync(this.config.dataDirectory);
@@ -35,9 +36,12 @@ class Main {
         } else {
             Object.assign(this.data, JSON.parse(fs.readFileSync(this.config.dataDirectory+'/iptables-web-ui.json')));
 
-            const dynamicChains = this.data.dynamicChains.map(id => this.migrateChainId(id));
-            if(dynamicChains.some((id, i) => id != this.data.dynamicChains[i])) {
-                this.data.dynamicChains = dynamicChains;
+            if(this.data.dynamicChains) {
+                // migrate legacy blacklist of unsaved chains
+                for(const id of this.data.dynamicChains) {
+                    this.data.chains[this.migrateChainId(id)] = { save: false };
+                }
+                delete this.data.dynamicChains;
                 this.saveData();
             }
         }
@@ -49,13 +53,23 @@ class Main {
         this.webinterface.start();
     }
 
+    getChainData(chainId) {
+        // register unknown chains with default settings
+        if(!this.data.chains[chainId]) {
+            this.data.chains[chainId] = { save: !this.config.excludeByDefault };
+            this.saveData();
+        }
+        return this.data.chains[chainId];
+    }
+
     migrateChainId(id) {
         // convert legacy format <true/false>-<table>-<chain> to <ip4/ip6>-<table>-<chain>
         return id.replace(/^(true|false)-/, (match, ipv6) => ipv6 == 'true' ? 'ip6-' : 'ip4-');
     }
 
     saveData() {
-        fs.writeFileSync(this.config.dataDirectory+'/iptables-web-ui.json', JSON.stringify(this.data, null, 4));
+        const json = JSON.stringify(this.data, null, this.config.debugMode ? 4 : 0);
+        fs.writeFileSync(this.config.dataDirectory+'/iptables-web-ui.json', json);
     }
 }
 new Main().start();

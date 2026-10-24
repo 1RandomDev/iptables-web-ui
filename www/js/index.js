@@ -40,7 +40,7 @@ function updateChainInfo() {
     defaultPolicyElement.style.display = (currentChain.system && currentChain.table == 'filter') ? null : 'none';
     defaultPolicySelect.value = currentChain.defaultPolicy;
     defaultPolicySelect.setAttribute('style', `color: rgb(var(--bs-${currentChain.defaultPolicy == 'ACCEPT' ? 'success' : 'danger'}-rgb)) !important`);
-    saveChainToggle.checked = !currentChain.dynamic;
+    saveChainToggle.checked = currentChain.save;
 }
 
 async function loadChains() {
@@ -206,15 +206,15 @@ async function setDefaultPolicy(policy) {
 }
 saveChainToggle.addEventListener('change', async event => {
     try {
-        await setChainDynamic(!event.target.checked);
-        currentChain.dynamic = !event.target.checked;
+        await setChainSave(event.target.checked);
+        currentChain.save = event.target.checked;
     } catch(err) {
-        event.target.value = currentChain.defaultPolicy;
+        event.target.checked = currentChain.save;
         showError(err.message);
     }
 });
-async function setChainDynamic(dynamic) {
-    let res = await fetch(`/api/chain?table=${currentChain.table}&ip6=${currentChain.ip6}&action=setDynamic&name=${currentChain.name}&dynamic=${dynamic}`, { method: 'POST'});
+async function setChainSave(save) {
+    let res = await fetch(`/api/chain?table=${currentChain.table}&ip6=${currentChain.ip6}&action=setSave&name=${currentChain.name}&save=${save}`, { method: 'POST'});
     if(res.status == 500) throw new Error(await res.text());
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
 }

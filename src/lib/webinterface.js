@@ -71,9 +71,8 @@ class Webinterface {
         // Chains
         this.app.get('/api/chain', async (req, res) => {
             try {
-                const chainId = this.getChainId(req.query.ip6, req.query.table, '');
                 const chains = await this.main.iptables.listChains(req.query.table, req.query.ip6 == 'true');
-                chains.forEach(chain => chain.dynamic = this.main.data.dynamicChains.includes(chainId+chain.name));
+                chains.forEach(chain => chain.save = this.main.getChainData(this.getChainId(req.query.ip6, req.query.table, chain.name)).save);
                 res.json({ defaultChain: this.main.config.defaultChain, chains: chains });
             } catch(err) {
                 res.status(500).end(err.message);
@@ -97,6 +96,8 @@ class Webinterface {
             if(req.query.name) {
                 try {
                     await this.main.iptables.deleteChain(req.query.name, req.query.table, req.query.ip6 == 'true');
+                    delete this.main.data.chains[this.getChainId(req.query.ip6, req.query.table, req.query.name)];
+                    this.main.saveData();
                     res.end()
                 } catch(err) {
                     res.status(500).end(err.message);
@@ -119,6 +120,12 @@ class Webinterface {
                             return;
                         }
                         await this.main.iptables.renameChain(req.query.name, req.query.newName, req.query.table, req.query.ip6 == 'true');
+                        const oldChainId = this.getChainId(req.query.ip6, req.query.table, req.query.name);
+                        if(this.main.data.chains[oldChainId]) {
+                            this.main.data.chains[this.getChainId(req.query.ip6, req.query.table, req.query.newName)] = this.main.data.chains[oldChainId];
+                            delete this.main.data.chains[oldChainId];
+                            this.main.saveData();
+                        }
                         res.end();
                         break;
                     case 'setDefaultPolicy':
@@ -129,23 +136,14 @@ class Webinterface {
                         await this.main.iptables.setDefaultPolicy(req.query.name, req.query.policy, req.query.table, req.query.ip6 == 'true');
                         res.end();
                         break;
-                    case 'setDynamic':
-                        const chainId = this.getChainId(req.query.ip6, req.query.table, req.query.name);
-                        if(req.query.dynamic == 'true') {
-                            if(!this.main.data.dynamicChains.includes(chainId)) {
-                                this.main.data.dynamicChains.push(chainId);
-                                this.main.saveData();
-                            }
-                            res.end();
-                        } else if(req.query.dynamic == 'false') {
-                            if(this.main.data.dynamicChains.includes(chainId)) {
-                                this.main.data.dynamicChains = this.main.data.dynamicChains.filter(id => id != chainId);
-                                this.main.saveData();
-                            }
-                            res.end();
-                        } else {
-                            res.status(400).end('Missing parameters for setDynamic');
+                    case 'setSave':
+                        if(req.query.save != 'true' && req.query.save != 'false') {
+                            res.status(400).end('Missing parameters for setSave');
+                            return;
                         }
+                        this.main.getChainData(this.getChainId(req.query.ip6, req.query.table, req.query.name)).save = req.query.save == 'true';
+                        this.main.saveData();
+                        res.end();
                         break;
                     default:
                         res.status(400).end('Unknown action');
@@ -232,7 +230,7 @@ class Webinterface {
 
         // Save & restore
         this.app.post('/api/save', async (req, res) => {
-            await this.main.iptables.saveRules(this.main.data.dynamicChains);
+            await this.main.iptables.saveRules(chainId => this.main.getChainData(chainId).save);
             res.end();
         });
         this.app.post('/api/restore', async (req, res) => {
