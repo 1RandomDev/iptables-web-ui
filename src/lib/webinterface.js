@@ -1,17 +1,18 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
 class Webinterface {
-    constructor(host, port, adminPassword, jwtKey, main) {
+    constructor(host, port, adminPasswordHash, jwtKey, main) {
         this.host = host;
         this.port = port;
-        this.adminPassword = adminPassword;
+        this.adminPasswordHash = adminPasswordHash;
         this.jwtKey = jwtKey;
         this.main = main;
 
-        if(this.adminPassword && !this.jwtKey) {
+        if(this.adminPasswordHash && !this.jwtKey) {
             this.jwtKey = this.generateRandomKey();
             console.warn('JWT secret is not set. Generating random key, this will lead to all users being logged out.');
         }
@@ -26,7 +27,7 @@ class Webinterface {
             const queryParams = Object.keys(req.query);
             req.rawQuery = queryParams.length != 0 ? '?'+queryParams.map(key => key + '=' + req.query[key]).join('&') : '';
 
-            if(!this.adminPassword) {
+            if(!this.adminPasswordHash) {
                 // redirect away from login page if authentication diabled
                 if(req.path == '/login.html') {
                     res.redirect('/'+req.rawQuery);
@@ -266,10 +267,10 @@ class Webinterface {
         });
 
         // Login
-        this.app.post('/api/login', (req, res) => {
+        this.app.post('/api/login', async (req, res) => {
             const data = req.body;
-            if(data.password) {
-                const token = this.loginUser(data.password);
+            if(typeof data.password == 'string' && data.password) {
+                const token = await this.loginUser(data.password);
                 if(token) {
                     res.cookie('token', token, {maxAge: 2630000000}).json({success: true});
                 } else {
@@ -292,8 +293,8 @@ class Webinterface {
         return crypto.randomBytes(30).toString('hex');
     }
 
-    loginUser(password) {
-        if(password === this.adminPassword) {
+    async loginUser(password) {
+        if(await bcrypt.compare(password, this.adminPasswordHash)) {
             const token = jwt.sign({}, this.jwtKey, {
                 expiresIn: '30d'
             });

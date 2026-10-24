@@ -14,8 +14,13 @@ class Main {
 
             webuiHost: process.env.WEBUI_HOST,
             webuiPort: process.env.WEBUI_PORT || 8585,
-            webuiPassword: process.env.WEBUI_PASSWORD
+            webuiPasswordHash: process.env.WEBUI_PASSWORD_HASH
         };
+
+        if(process.env.WEBUI_PASSWORD && !this.config.webuiPasswordHash) {
+            console.error('WEBUI_PASSWORD is no longer supported. Please replace it with WEBUI_PASSWORD_HASH (see README for more details).');
+            process.exit(1);
+        }
 
         this.data = {
             jwtSecret: '',
@@ -34,7 +39,7 @@ class Main {
         this.iptables = new Iptables(this.config.debugMode);
         this.conntrack = new Conntrack(this.config.debugMode);
 
-        this.webinterface = new Webinterface(this.config.webuiHost, this.config.webuiPort, this.config.webuiPassword, this.data.jwtSecret, this);
+        this.webinterface = new Webinterface(this.config.webuiHost, this.config.webuiPort, this.config.webuiPasswordHash, this.data.jwtSecret, this);
         this.webinterface.start();
     }
 

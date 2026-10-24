@@ -21,7 +21,7 @@ docker run -d --name=iptables-web-ui \
     -v data:/app/data \
     -v /etc/iptables:/etc/iptables \
     -e TZ=<timezone> \
-    -e WEBUI_PASSWORD=<my_secret_password> \
+    -e WEBUI_PASSWORD_HASH='<password_hash>' \
     ghcr.io/1randomdev/iptables-web-ui:latest
 ```
 
@@ -39,7 +39,7 @@ services:
       - /etc/iptables:/etc/iptables # Optional, necessary for saving lists for iptables-persistent
     environment:
       - TZ=<timezone>
-      - WEBUI_PASSWORD=<my_secret_password>
+      - WEBUI_PASSWORD_HASH=<password_hash>
     restart: unless-stopped
 ```
 For all available options see [docker-compose.yml](https://github.com/1RandomDev/iptables-web-ui/blob/master/docker-compose.yml)
@@ -49,8 +49,9 @@ For all available options see [docker-compose.yml](https://github.com/1RandomDev
 | -------- | ----------- | ------- |
 | DEFAULT_CHAIN | Chain that is selected when you open the interface. Format: `<ipv6 true/false>-<table>-<chain>` | `false-filter-INPUT` |
 | FLUSH_ON_RESTORE | Clear all rules and chains on restore. This is the default behavior of iptables-restore, usually this should not be changed. Can be used to only save and restore selected tables to prevent messing up automatically generated chains like the ones from docker or libvirt (required additional steps when first loading the rules). | `true` |
+| EXCLUDE_BY_DEFAULT | Exclude new chains from the save file by default. | `false` |
 | WEBUI_HOST | Ip address the web interface listens on. | *all* |
 | WEBUI_PORT | Port the web interface listens on. | `8585` |
-| WEBUI_PASSWORD | Super secret web interface password. | *none* |
+| WEBUI_PASSWORD_HASH | Bcrypt hash of the web interface password. Generate using: `htpasswd -nBC 10 "" \| tr -d ':\n'`. When using Docker Compose, every `$` in the hash has to be escaped as `$$`. | *none* |
 | DATA_DIRECTORY | Path for saving keys and user configurations. | `/app/data` |
 | DEBUG_MODE | Print executed iptables commands for debug purposes. | `false` |

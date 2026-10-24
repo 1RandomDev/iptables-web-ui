@@ -10,5 +10,5 @@ services:
       - /etc/iptables:/etc/iptables # Optional, necessary for saving lists for iptables-persistent
     environment:
       - TZ=<timezone>
-      - WEBUI_PASSWORD=<my_password>
+      - WEBUI_PASSWORD_HASH=<password_hash> # Escape every $ as $$
     restart: unless-stopped
