@@ -44,6 +44,7 @@ function updateChainInfo() {
 }
 
 async function loadChains() {
+    chains = [];
     for(const element of document.querySelectorAll('#chainSelect [data-table]')) {
         const table = element.dataset.table;
         const ip6 = element.dataset.ip6 == 'true';
