@@ -47,7 +47,7 @@ For all available options see [docker-compose.yml](https://github.com/1RandomDev
 ## Configuration
 | Variable | Description | Default |
 | -------- | ----------- | ------- |
-| DEFAULT_CHAIN | Chain that is selected when you open the interface. Format: `<ipv6 true/false>-<table>-<chain>` | `false-filter-INPUT` |
+| DEFAULT_CHAIN | Chain that is selected when you open the interface. Format: `<ip4/ip6>-<table>-<chain>` | `ip4-filter-INPUT` |
 | FLUSH_ON_RESTORE | Clear all rules and chains on restore. This is the default behavior of iptables-restore, usually this should not be changed. Can be used to only save and restore selected tables to prevent messing up automatically generated chains like the ones from docker or libvirt (required additional steps when first loading the rules). | `true` |
 | EXCLUDE_BY_DEFAULT | Exclude new chains from the save file by default. | `false` |
 | WEBUI_HOST | Ip address the web interface listens on. | *all* |

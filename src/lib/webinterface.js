@@ -314,7 +314,7 @@ class Webinterface {
     }
 
     getChainId(ipv6, table, chain) {
-        return `${ipv6 == 'true'}-${table || 'filter'}-${chain}`;
+        return `${ipv6 == 'true' ? 'ip6' : 'ip4'}-${table || 'filter'}-${chain}`;
     }
 }
 

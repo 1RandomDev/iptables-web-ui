@@ -11,7 +11,20 @@ let chains = {};
 let numRules = 0;
 
 // Chains
+function getChainId(ip6, table, name) {
+    return (ip6 ? 'ip6' : 'ip4')+'-'+table+'-'+name;
+}
+
 async function switchChain(id) {
+    if(!chains[id]) {
+        const fallbackId = Object.keys(chains)[0];
+        if(!fallbackId) return;
+        showToast({
+            message: `Chain <b>${id}</b> is not available`,
+            type: 'warning'
+        });
+        id = fallbackId;
+    }
     currentChain = chains[id];
     updateChainInfo();
     await loadRules();
@@ -45,7 +58,7 @@ async function loadChains() {
         res.chains.forEach(chain => {
             chain.table = table;
             chain.ip6 = ip6;
-            const chainId = ip6+'-'+table+'-'+chain.name;
+            const chainId = getChainId(ip6, table, chain.name);
             chains[chainId] = chain;
             html += `<li><div class="dropdown-item curs-pointer ${chain.system ? 'fw-bold' : ''}" onclick="switchChain('${chainId}')">${chain.name}</div></li>`;
         });
@@ -101,7 +114,7 @@ async function renameCurrentChain(newName) {
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
 
     await loadChains();
-    await switchChain(currentChain.ip6+'-'+currentChain.table+'-'+newName);
+    await switchChain(getChainId(currentChain.ip6, currentChain.table, newName));
 }
 
 document.querySelector('#currentChainActions .transparentDeleteBtn').addEventListener('click', async event => {
@@ -171,7 +184,7 @@ async function createNewChain(table, ip6, name) {
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
 
     await loadChains();
-    await switchChain(ip6+'-'+table+'-'+name);
+    await switchChain(getChainId(ip6 == 'true', table, name));
 }
 
 document.querySelector('#currentChainDefaultPolicy select').addEventListener('change', async event => {
@@ -456,7 +469,7 @@ function highlightRuleSyntax(rule) {
     // Link to related chains
     const matches = rule.match(/\-j (.+?)$/);
     if(matches) {
-        const chainId = currentChain.ip6+'-'+currentChain.table+'-'+matches[1];
+        const chainId = getChainId(currentChain.ip6, currentChain.table, matches[1]);
         if(chains[chainId]) {
             rule = rule.replace(/\-j (.+?)$/, `-j <span class="hl-link" onclick="switchChain('${chainId}');">$1</span>`);
         }

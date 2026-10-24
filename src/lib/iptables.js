@@ -116,7 +116,7 @@ class Iptables extends CLIWrapper {
                 const parts = line.match(/^-(\w) (.+?)(?:$| (.+))/);
                 const type = parts[1], chain = parts[2], value = parts[3];
 
-                if(excludedChains.includes(ip6+'-'+table+'-'+chain)) continue;
+                if(excludedChains.includes((ip6 ? 'ip6' : 'ip4')+'-'+table+'-'+chain)) continue;
                 switch(type) {
                     case 'P':
                         out += `:${chain} ${value} [0:0]\n`;

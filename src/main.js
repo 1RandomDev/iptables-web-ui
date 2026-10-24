@@ -8,7 +8,7 @@ class Main {
     async start() {
         this.config = {
             debugMode: process.env.DEBUG_MODE == 'true',
-            defaultChain: process.env.DEFAULT_CHAIN || 'false-filter-INPUT',
+            defaultChain: this.migrateChainId(process.env.DEFAULT_CHAIN || 'ip4-filter-INPUT'),
             flushOnRestore: process.env.FLUSH_ON_RESTORE != 'false',
             dataDirectory: process.env.DATA_DIRECTORY || './data',
 
@@ -34,6 +34,12 @@ class Main {
             fs.writeFileSync(this.config.dataDirectory+'/iptables-web-ui.json', JSON.stringify(this.data, null, 4));
         } else {
             Object.assign(this.data, JSON.parse(fs.readFileSync(this.config.dataDirectory+'/iptables-web-ui.json')));
+
+            const dynamicChains = this.data.dynamicChains.map(id => this.migrateChainId(id));
+            if(dynamicChains.some((id, i) => id != this.data.dynamicChains[i])) {
+                this.data.dynamicChains = dynamicChains;
+                this.saveData();
+            }
         }
         
         this.iptables = new Iptables(this.config.debugMode);
@@ -41,6 +47,11 @@ class Main {
 
         this.webinterface = new Webinterface(this.config.webuiHost, this.config.webuiPort, this.config.webuiPasswordHash, this.data.jwtSecret, this);
         this.webinterface.start();
+    }
+
+    migrateChainId(id) {
+        // convert legacy format <true/false>-<table>-<chain> to <ip4/ip6>-<table>-<chain>
+        return id.replace(/^(true|false)-/, (match, ipv6) => ipv6 == 'true' ? 'ip6-' : 'ip4-');
     }
 
     saveData() {
