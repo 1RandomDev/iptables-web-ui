@@ -15,7 +15,7 @@ function getChainId(ip6, table, name) {
     return (ip6 ? 'ip6' : 'ip4')+'-'+table+'-'+name;
 }
 
-async function switchChain(id) {
+async function switchChain(id, pushHistory = true) {
     if(!chains[id]) {
         const fallbackId = Object.keys(chains)[0];
         if(!fallbackId) return;
@@ -27,6 +27,7 @@ async function switchChain(id) {
     }
     currentChain = chains[id];
     updateChainInfo();
+    updateChainUrl(pushHistory);
     await loadRules();
 }
 
@@ -41,6 +42,25 @@ function updateChainInfo() {
     defaultPolicySelect.value = currentChain.defaultPolicy;
     defaultPolicySelect.setAttribute('style', `color: rgb(var(--bs-${currentChain.defaultPolicy == 'ACCEPT' ? 'success' : 'danger'}-rgb)) !important`);
     saveChainToggle.checked = currentChain.save;
+}
+
+function updateChainUrl(pushHistory) {
+    const url = new URL(window.location);
+    url.searchParams.set('ip6', currentChain.ip6);
+    url.searchParams.set('table', currentChain.table);
+    url.searchParams.set('chain', currentChain.name);
+    if(url.href == window.location.href) return;
+    if(pushHistory) {
+        window.history.pushState(null, '', url);
+    } else {
+        window.history.replaceState(null, '', url);
+    }
+}
+
+function getChainIdFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    if(!params.has('table') || !params.has('chain')) return;
+    return getChainId(params.get('ip6') == 'true', params.get('table'), params.get('chain'));
 }
 
 async function loadChains() {
@@ -69,8 +89,16 @@ async function loadChains() {
         element.querySelector('.dropdown-menu').innerHTML = html;
     }
 
-    if(!currentChain) await switchChain(defaultChain);
+    if(!currentChain) await switchChain(getChainIdFromUrl() || defaultChain, false);
 }
+
+window.addEventListener('popstate', async () => {
+    try {
+        await switchChain(getChainIdFromUrl() || defaultChain, false);
+    } catch(err) {
+        showError(err.message);
+    }
+});
 
 document.querySelector('#currentChainActions .transparentEditBtn').addEventListener('click', () => {
     if(currentChain.system) return;
@@ -115,7 +143,7 @@ async function renameCurrentChain(newName) {
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
 
     await loadChains();
-    await switchChain(getChainId(currentChain.ip6, currentChain.table, newName));
+    await switchChain(getChainId(currentChain.ip6, currentChain.table, newName), false);
 }
 
 document.querySelector('#currentChainActions .transparentDeleteBtn').addEventListener('click', async event => {
@@ -148,7 +176,7 @@ async function deleteCurrentChain() {
     if(!res.ok) throw new Error('Request failed with status: '+res.status);
 
     await loadChains();
-    await switchChain(defaultChain);
+    await switchChain(defaultChain, false);
 }
 
 async function showCreateChainModal(table, ip6) {
